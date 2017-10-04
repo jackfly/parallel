@@ -1,0 +1,31 @@
+/*
+Project 1: Part 2
+Group 2
+*/
+
+#include <iostream>
+#include <stdio.h>
+#include <algorithm>
+#include "timing.h"
+#include <string.h>
+#include "pwdcraker_ispc.h"
+using namespace std;
+using namespace ispc;
+
+
+int main() {
+    int maxLen = 5;
+    // We assume that the password is not case-sensitive, and can be only set from the following 46 characters.
+    //char *password = "bv37q";
+    //cout << "The password to be cracked: " << password << endl;
+    //unsigned long result = ::hash((unsigned char*)password);
+    //cout << "Hash of the password: " << result << endl;
+    unsigned long *output = new unsigned long[5];
+    reset_and_start_timer();
+    pwdcraker_ispc(maxLen, (uint64_t *)output);
+    //printf("Hash code is: %lu\n", output[0]);
+    double dt = get_elapsed_mcycles();
+    printf("@time of ISPC run:\t\t\t[%.3f] million cycles\n", dt);
+    return 0;
+}
+
