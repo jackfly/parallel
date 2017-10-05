@@ -70,3 +70,24 @@ export void pwdcraker_ispc_unbalanced(uniform int maxLen, uniform int output[])
       permutation(temp,length,0,hashPassword,length,output);
     } 
 }
+
+task void pwdcraker_ispc_task(uniform int maxLen,  uniform int output[], uniform int range, uniform int length)
+{
+  unsigned int64 hashPassword = hash(password,5);
+  uniform int start = taskIndex * range;
+  uniform int end = min((int)36, start + range);
+  int temp[5] = {0};
+    foreach(m=start...end){  
+      temp[0] = alphanumerical[m-1];
+      permutation(temp,length-1,1,hashPassword,length,output);
+    } 
+}
+
+export void pwdcraker_ispc_task_exe(uniform int taskNum, uniform int maxLen, uniform int output[]){
+    uniform int times = 36;
+    uniform int range = (int) times / taskNum;
+    print("======Start cracking using ISPC_task (balanced distributed)======\n");
+    for(uniform int length=1;length<=maxLen;length++){
+      launch[times/range] pwdcraker_ispc_task(maxLen, output, range, length);
+    }
+}

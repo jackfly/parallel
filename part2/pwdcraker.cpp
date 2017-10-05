@@ -82,7 +82,7 @@ void pwdcraker_serial( int maxLen,  int output[])
 
 
 
-int main() {
+int main(int argc, char *argv[]) {
     int maxLen = 5;
     // We assume that the password is not case-sensitive, and can be only set from the a-z 0-9.
     //char *password = "bv37q";
@@ -135,8 +135,25 @@ int main() {
     }
     printf("[root calculate ISPC]:\t\t[%.3f] million cycles\n", minISPC_unbalanced);
 
+     double minISPC_task = 1e30;
+
+    for(unsigned int i = 0; i < 3; i++){
+        reset_and_start_timer();
+        pwdcraker_ispc_task_exe(atoi(argv[1]), maxLen, (int *)output);
+        double dt = get_elapsed_mcycles();
+        printf("The cracked password in ASCII is: ");
+        for(int j = 0; j < output[5]; j++){
+            printf("%d ", output[j]);
+        }
+        printf("\n");
+        printf("@time of ISPC run:\t\t\t[%.3f] million cycles\n", dt);
+        minISPC_task = std::min(minISPC_task, dt); 
+    }
+    printf("[root calculate ISPC]:\t\t[%.3f] million cycles\n", minISPC_task);   
+
     printf("\t\t\t\t(%.2fx speedup from ISPC (balanced distributed))\n", minSerial/minISPC);
-    printf("\t\t\t\t(%.2fx speedup from ISPC (unbalanced distributed))\n", minSerial/minISPC_unbalanced);
+    printf("\t\t\t\t(%.2fx speedup from ISPC (unbalanced distributed)\n", minSerial/minISPC_unbalanced);
+    printf("\t\t\t\t(%.2fx speedup from ISPC_task (%d task(s), balanced distributed)\n", minSerial/minISPC_task, atoi(argv[1]));
 
     return 0;
 }
