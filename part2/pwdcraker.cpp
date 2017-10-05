@@ -40,14 +40,15 @@ static uint64_t inline hash(uint8_t str[], int len)
     return hash;
 }
 
-static void inline permutation(uint8_t prefix[], int length, int index, uint64_t hashPassword, int constLength){
+static void inline permutation(uint8_t prefix[], int length, int index, uint64_t hashPassword, int constLength, int output[]){
   if(length == 0){
   if(::hash(prefix,constLength)==hashPassword){
-    printf("Successfully craked!! \n Password length: %d\n", constLength);
-    //printf("Cracked password:\n");
-    //for (int j = 0; j< constLength; j++){
-    //printf("%d \n", prefix[j]);
-    //}
+    printf("======Successfully Craked!!!======\n");
+    const int lastone = 5;
+    output[lastone] = constLength;
+    for (int n = 0; n<constLength; n++){
+      output[n] = prefix[n];
+    }
    }
    return;
   }else{
@@ -60,23 +61,22 @@ static void inline permutation(uint8_t prefix[], int length, int index, uint64_t
     
    for (int i = 0; i < sizeof(alphanumerical)/sizeof(int8_t); i++) {
     prefix[index] = alphanumerical[i];
-    permutation(prefix, length-1,index+1, hashPassword, constLength);
+    permutation(prefix, length-1,index+1, hashPassword, constLength, output);
    }
    
   }
  }
 
-void pwdcraker_serial( int maxLen,  uint64_t output[])
+void pwdcraker_serial( int maxLen,  int output[])
 {
   //printf("Length of the password: %d\n", sizeof(password)/sizeof(int8_t));
   //printf("Length of alphanumerical pool: %d\n", sizeof(alphanumerical)/sizeof(int8_t));
   int i = 0;
   uint64_t hashPassword = ::hash(password,5);
-  output[i] = hashPassword;
- 
+  printf("======Start cracking using Serial====== \n");
   for(int length=1;length<=5;length++){
     uint8_t temp[5] = {0};
-    permutation(temp,length,0,hashPassword,length);
+    permutation(temp,length,0,hashPassword,length, output);
   }
 }
 
@@ -84,37 +84,59 @@ void pwdcraker_serial( int maxLen,  uint64_t output[])
 
 int main() {
     int maxLen = 5;
-    // We assume that the password is not case-sensitive, and can be only set from the following 46 characters.
+    // We assume that the password is not case-sensitive, and can be only set from the a-z 0-9.
     //char *password = "bv37q";
-    //cout << "The password to be cracked: " << password << endl;
-    //unsigned long result = ::hash((unsigned char*)password);
-    //cout << "Hash of the password: " << result << endl;
-    unsigned long *output = new unsigned long[5];
-
-    double minISPC = 1e30;
-
-    for(unsigned int i = 0; i < 3; i++){
-        reset_and_start_timer();
-        pwdcraker_ispc(maxLen, (uint64_t *)output);
-        double dt = get_elapsed_mcycles();
-        printf("@time of ISPC run:\t\t\t[%.3f] million cycles\n", dt);
-        minISPC = std::min(minISPC, dt); 
-    }
-    printf("[root calculate ISPC]:\t\t[%.3f] million cycles\n", minISPC);
-
+    int *output = new int[maxLen+1];
 
     double minSerial = 1e30;
     for(unsigned int i = 0 ; i < 3; i ++){
         reset_and_start_timer();
-        pwdcraker_serial(maxLen, (uint64_t *)output);
+        pwdcraker_serial(maxLen, (int *)output);
         double dt = get_elapsed_mcycles();
+        printf("The cracked password in ASCII is: ");
+        for(int j = 0; j < output[5]; j++){
+            printf("%d ", output[j]);
+        }
+        printf("\n");
         printf("@time of serial run:\t\t\t[%.3f] million cycles\n", dt);
         minSerial = std::min(minSerial, dt); 
     }
     printf("[root calculate serial]:\t\t[%.3f] million cycles\n", minSerial);
 
+    double minISPC = 1e30;
 
-    printf("\t\t\t\t(%.2fx speedup from ISPC)\n", minSerial/minISPC);
+    for(unsigned int i = 0; i < 3; i++){
+        reset_and_start_timer();
+        pwdcraker_ispc(maxLen, (int *)output);
+        double dt = get_elapsed_mcycles();
+        printf("The cracked password in ASCII is: ");
+        for(int j = 0; j < output[5]; j++){
+            printf("%d ", output[j]);
+        }
+        printf("\n");
+        printf("@time of ISPC run:\t\t\t[%.3f] million cycles\n", dt);
+        minISPC = std::min(minISPC, dt); 
+    }
+    printf("[root calculate ISPC]:\t\t[%.3f] million cycles\n", minISPC);
+
+    double minISPC_unbalanced = 1e30;
+
+    for(unsigned int i = 0; i < 3; i++){
+        reset_and_start_timer();
+        pwdcraker_ispc_unbalanced(maxLen, (int *)output);
+        double dt = get_elapsed_mcycles();
+        printf("The cracked password in ASCII is: ");
+        for(int j = 0; j < output[5]; j++){
+            printf("%d ", output[j]);
+        }
+        printf("\n");
+        printf("@time of ISPC run:\t\t\t[%.3f] million cycles\n", dt);
+        minISPC_unbalanced = std::min(minISPC_unbalanced, dt); 
+    }
+    printf("[root calculate ISPC]:\t\t[%.3f] million cycles\n", minISPC_unbalanced);
+
+    printf("\t\t\t\t(%.2fx speedup from ISPC (balanced distributed))\n", minSerial/minISPC);
+    printf("\t\t\t\t(%.2fx speedup from ISPC (unbalanced distributed))\n", minSerial/minISPC_unbalanced);
 
     return 0;
 }

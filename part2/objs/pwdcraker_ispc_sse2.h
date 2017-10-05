@@ -34,7 +34,8 @@ namespace ispc { /* namespace */
 #if defined(__cplusplus) && (! defined(__ISPC_NO_EXTERN_C) || !__ISPC_NO_EXTERN_C )
 extern "C" {
 #endif // __cplusplus
-    extern void pwdcraker_ispc(int32_t maxLen, uint64_t * output);
+    extern void pwdcraker_ispc(int32_t maxLen, int32_t * output);
+    extern void pwdcraker_ispc_unbalanced(int32_t maxLen, int32_t * output);
 #if defined(__cplusplus) && (! defined(__ISPC_NO_EXTERN_C) || !__ISPC_NO_EXTERN_C )
 } /* end extern C */
 #endif // __cplusplus
